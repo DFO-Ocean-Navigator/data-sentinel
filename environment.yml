@@ -1,0 +1,9 @@
+name: data-sentinel
+channels:
+  - conda-forge
+  - https://repo.anaconda.com/pkgs/main
+  - https://repo.anaconda.com/pkgs/free
+  - https://repo.anaconda.com/pkgs/r
+  - https://repo.anaconda.com/pkgs/pro
+dependencies:
+  - netcdf4

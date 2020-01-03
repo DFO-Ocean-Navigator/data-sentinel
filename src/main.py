@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 import argparse
 import json
+import re
 import sys
-import netcdf4
+
+import xarray as xr
 
 
 def create_parser():
@@ -23,7 +25,28 @@ def read_json(file):
     return json.load(file)
 
 
+def read_file(file):
+    return [line.rstrip('\n') for line in file]
+
+
 def check_files(template_dict, incoming_files):
+
+    for p in template_dict.keys():
+        regex = re.compile(p)
+
+        matched = filter(regex.search, incoming_files)
+        if not matched:
+            print("No files matched with the regex " + p)
+            continue
+
+        known_file = template_dict[p]
+        with xr.open_dataset(known_file) as known_dataset:
+
+            for f in matched:
+                #todo need full path for file
+                print(f)
+
+
     return True
 
 
@@ -31,9 +54,12 @@ if __name__ == "__main__":
     parser = create_parser()
     args = parser.parse_args()
 
+    print("Reading template...")
     data = read_json(args.template)
 
     dataset = args.dataset
-    incoming_files = args.incoming
+    print("Ingesting incoming files...")
+    incoming_files = read_file(args.incoming)
 
+    print("Checking files...")
     check_files(data[dataset], incoming_files)

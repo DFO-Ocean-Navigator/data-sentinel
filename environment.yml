@@ -7,3 +7,4 @@ channels:
   - https://repo.anaconda.com/pkgs/pro
 dependencies:
   - netcdf4
+  - xarray

@@ -6,6 +6,10 @@ import sys
 
 import xarray as xr
 
+from pretty_print import bcolors
+from rules import check_rules
+from template import Template
+
 
 def create_parser():
     parser = argparse.ArgumentParser(prog='Data Sentinel',
@@ -29,37 +33,44 @@ def read_file(file):
     return [line.rstrip('\n') for line in file]
 
 
-def check_files(template_dict, incoming_files):
+def check_files(template, incoming_files):
 
-    for p in template_dict.keys():
-        regex = re.compile(p)
+    passed = []
+    failed = []
+    for pattern, filename in template.known_files.items():
+        regex = re.compile(pattern)
 
         matched = filter(regex.search, incoming_files)
         if not matched:
-            print("No files matched with the regex " + p)
+            print("No files matched with the regex %s." % pattern)
             continue
 
-        known_file = template_dict[p]
-        with xr.open_dataset(known_file) as known_dataset:
-
+        with xr.open_dataset(filename) as known_dataset:
             for f in matched:
-                #todo need full path for file
-                print(f)
+                with xr.open_dataset(f) as spooky_dataset:
+                    if(check_rules(template.rules, known_dataset, spooky_dataset)):
+                        passed.append(f)
+                    else:
+                        failed.append(f)
 
-
-    return True
+    return passed, failed
 
 
 if __name__ == "__main__":
     parser = create_parser()
     args = parser.parse_args()
 
-    print("Reading template...")
-    data = read_json(args.template)
-
     dataset = args.dataset
-    print("Ingesting incoming files...")
+
+    print(bcolors.HEADER + "Reading template..." + bcolors.ENDC)
+    template = Template(read_json(args.template)[dataset])
+
+    print(bcolors.HEADER + "Ingesting incoming files..." + bcolors.ENDC)
     incoming_files = read_file(args.incoming)
 
-    print("Checking files...")
-    check_files(data[dataset], incoming_files)
+    print(bcolors.HEADER + "Checking files..." + bcolors.ENDC)
+    passed, failed = check_files(template, incoming_files)
+
+    print(bcolors.HEADER + "Results..." + bcolors.ENDC)
+    print(bcolors.OKGREEN + "%d files passed." % len(passed) + bcolors.ENDC)
+    print(bcolors.FAIL + "%d files failed." % len(failed) + bcolors.ENDC)

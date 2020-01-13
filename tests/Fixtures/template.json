@@ -4,9 +4,7 @@
             "check_attrs": ["product_version"],
             "check_dimensions_identical": true,
             "check_unlimited_time_dim": true,
-            "check_variables": true,
-            "check_variables_attrs": [],
-            "check_file_type": true
+            "check_variables": true
         },
         "known_files": {
             ".*": "../tests/Fixtures/giops_forecast.nc"

@@ -20,7 +20,8 @@ def create_parser():
                         type=argparse.FileType('r'), default=sys.stdin, help='Path or stdin to files to be checked.')
     parser.add_argument('--dataset', type=str, required=True,
                         help='Dataset key to be tested that is in template file (e.g. giops_daily).')
-    parser.add_argument('-v', '--verbose', help='Verbose results output.', action='store_true')
+    parser.add_argument('-v', '--verbose',
+                        help='Verbose results output.', action='store_true')
     parser.add_argument(
         '--template', type=argparse.FileType('r'), required=True, help='Path to template file.')
 
@@ -53,22 +54,30 @@ def check_files(template, incoming_files):
                     rules = apply_rules(
                         template.rules, known_dataset, spooky_dataset)
 
-                    results[f] = ([check_rules(rules)] + rules)
+                    results[f] = ([str(check_rules(rules))] + rules)
 
     return results
 
 
 def print_results(results, verbose=True):
     s = pd.DataFrame.from_dict(results, orient='index', columns=[
-                               'all_passed', 'dims_equal', 'time_dim_unlimited', 'vars_equal'])
+                               'all_passed', 'dims_equal', 'time_dim_unlimited', 'vars_equal']).reset_index()
     total_files = len(s.index)
-    num_passed = s.all_passed.sum()
+    try:
+        num_passed = s['all_passed'].value_counts()['True']
+    except KeyError:
+        num_passed = 0
+
     print(bcolors.HEADER + "Results..." + bcolors.ENDC)
     print(bcolors.OKGREEN + "%d files passed." % num_passed + bcolors.ENDC)
     print(bcolors.FAIL + "%d files failed." %
           (total_files - num_passed) + bcolors.ENDC)
     if verbose:
         print(s)
+
+    passed_files = s.loc[s['all_passed'] == 'True']
+    if not passed_files.empty:
+        print(passed_files['index'].to_list())
 
 
 if __name__ == "__main__":
